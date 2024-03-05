@@ -1,0 +1,154 @@
+---
+title: "Tugas Analisis Regresi K1"
+author: "Elke Frida Rahmawati - G1401221025"
+date: "2024-03-05"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+
+## Data
+
+```{r}
+bookdown::pdf_document2
+library(car)
+library(dplyr)
+library(readxl)
+data_ar<-read_xlsx("C:/Users/user/OneDrive/Dokumen/semester 4/Data.xlsx")
+data_ar
+```
+
+```{r}
+View(data_ar)
+```
+
+## Eksplorasi Data
+
+```{r}
+library(GGally)
+library(psych)
+
+pairs.panels(data_ar<-data_ar[,-1])
+```
+
+## Pemodelan Regresi Linear
+
+## Pemodelan Regresi
+
+```{r}
+reg_ar<-lm(y~x, data=data_ar)
+summary(reg_ar)
+```
+
+Diperoleh metode regresi awal sebelum pemilihan metode regresi terbaik, yaitu sebagai berikut. $$
+  \hat{Y}=46.46041-0.75251X
+$$
+
+## Uji Asumsi Model
+
+### Uji Normalitas
+
+Hipotesis: $$ 
+H_0 :\ Data\ menyebar\ secara\ normal\ (p-value > {\alpha}) \\
+H_1 :\ Data\ menyebar\ secara\ tidak\ normal\ (p-value \leq {\alpha}) \ 
+$$
+
+```{r}
+shapiro.test(data_ar$y)
+```
+
+$$Dengan\ {\alpha}=0.05,\ dapat\ diputuskan\ bahwa\ H_0\ diterima\ karena\ (p-value=0.08374 > {\alpha}=0.05), \  sehingga\ dapat\ diputuskan\ bahwa\ data\ menyebar\ secara\ normal.$$
+
+### Uji Multikolinieritas
+
+Uji multikolinearitas tidak dapat dilakukan karena variabel independen yang ada dalam data hanya satu yaitu variabel x. Artinya tidak ada multikolinearitas antarpeubah bebas. Oleh karena itu, di bawah hanya dicantumkan perhitungan koefisien korelasi Pearson. Koefisien korelasi Pearson mengukur seberapa kuat dan searah hubungan linear antara dua variabel.
+
+```{r}
+correlation <- cor(data_ar$x, data_ar$y)
+correlation
+```
+
+Nilai yang diperoleh adalah -0.94 dimana dapat diartikan bahwa kedua variabel memiliki hubungan negatif yang sangat kuat antara dua variabel.
+
+## Uji Homoskedastisitas
+
+Hipotesis: $$ 
+H_0 :\ Ragam\ galat\ bersifat\ homoskedastisitas\ (p-value > {\alpha}) \\
+H_1 :\ Ragam\ galat\ bersifat\ heteroskedastisitas\ (p-value \leq {\alpha}) \ 
+$$
+
+```{r}
+lmtest::bptest(reg_ar)
+```
+
+$$Dengan\ {\alpha}=0.05,\ dapat\ diputuskan\ bahwa\ H_0\ diterima\ karena\ (p-value=0.4674 > {\alpha}=0.05), \  sehingga\ dapat\ diputuskan\ bahwa\ ragam\ galat\ bersifat\ homoskedastisitas.$$
+
+## Uji Autokorelasi
+
+Hipotesis: $$ 
+H_0 :E\ [{ε_i,ε_j}]=0\ (tidak\ ada\ autokorelasi)\\
+H_1 :E\ [{ε_i,ε_j}]\neq0\ (ada\ autokorelasi)\\
+$$
+
+```{r}
+lmtest::dwtest(reg_ar)
+```
+
+$$Dengan\ {\alpha}=0.05,\ dapat\ diputuskan\ bahwa\ H_0\ ditolak\ karena\ (p-value=0.48462 > {\alpha}=0.05), \  sehingga\ dapat\ diputuskan\ bahwa\ terdapat\ autokorelasi\ dalam\ sisaan.$$
+
+# Seleksi Peubah/Pemilihan Model Regresi Terbaik
+
+## Metode Backward
+
+```{r}
+olsrr::ols_step_backward_p(reg_ar)
+```
+
+Tidak ada variabel yang dihilangkan karena hanya ada satu variabel independen sehingga tidak ada variabel lain yang dapat dihapus.
+
+## Metode Forward
+
+```{r}
+olsrr::ols_step_forward_p(reg_ar)
+```
+
+Selain karena alasan hanya ada variabel independen, nilai-t hitung yang diperoleh \< tingkat signifikansi, maka variabel x dapat dianggap signifikan dalam model. Oleh karena itu, tidak ada proses eliminasi variabel yang dapat dilakukan.
+
+## Metode Stepwise
+
+```{r}
+step(lm(y~x,data=data_ar),direction="both")
+reg_ar <- lm(y ~ x, data = data_ar)
+reg_ar
+```
+
+Jika hanya ada satu variabel independen (x) dan satu variabel dependen (y), maka metode stepwise tidak akan bermanfaat karena tidak ada pilihan untuk menambah atau menghapus variabel independen dari model. Metode stepwise biasanya digunakan untuk memilih subset terbaik dari sekumpulan variabel independen yang tersedia.
+
+Dari hasil perhitungan dengan metode stepwise, nilai variabel dependen (y) diprediksi akan sekitar 46.4604 ketika variabel independen (x) adalah nol, dan setiap penambahan satu unit dalam variabel independen (x) akan menghasilkan penurunan sebesar -0.7525 unit dalam nilai variabel dependen (y). Berdasarkan prosedur seleksi peubah dengan metode stepwise, model terbaik yang terbentuk adalah model dengan empat peubah penjelas.
+
+# Penyesuaian Data
+
+## Transformasi Data
+
+```{r}
+ytr <- sqrt(data_ar$y)
+xtr <- sqrt(data_ar$x)
+plot(x=xtr, y=ytr)
+```
+
+# Model dan Pemeriksaan Asumsi
+
+```{r}
+model <- lm(ytr~xtr)
+summary(model)
+```
+
+```{r}
+lmtest::dwtest(model)
+```
+
+$$Dengan\ {\alpha}=0.05,\ dapat\ diputuskan\ bahwa\ H_0\ diterima\ karena\ (p-value=0.8629 > {\alpha}=0.05), \  sehingga\ dapat\ diputuskan\ bahwa\ tidak\ ada\ autokorelasi\ dalam\ sisaan\ atau\ galat\ saling\ bebas.$$ Dengan demikian, diperoleh model terbaik diperoleh setelah melakukan transformasi pada variabel x dan y ke dalam bentuk akar yaitu sebagai berikut. $$
+  \hat{Y}=8.71245-0.81339X
+$$ Model ini telah memenuhi asumsi-asumsi dalam regresi linear
